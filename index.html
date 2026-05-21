@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rubric Creator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-mode="use">
+  <header class="topbar">
+    <h1>Rubric Creator</h1>
+    <div class="actions">
+      <button id="mode-toggle" type="button">Edit rubric</button>
+      <button id="reset-selections" type="button" title="Clear all selections">Reset selections</button>
+      <button id="copy-rubric" type="button">Copy rubric markdown</button>
+      <button id="copy-url" type="button">Copy share URL</button>
+      <button id="new-rubric" type="button" title="Replace with the default rubric">New rubric</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="rubric-wrap">
+      <table id="rubric" class="rubric"></table>
+      <p class="hint" data-show-in="use">Click a cell to mark it as the selected risk level for that category. Click again to clear.</p>
+      <p class="hint" data-show-in="edit">Click any cell or header to edit its text. Use the controls to add or remove rows and columns.</p>
+    </section>
+
+    <section class="preview">
+      <h2>Preview <span class="preview-sub">(what reviewers will see when pasted into a PR description)</span></h2>
+      <div id="preview-rendered" class="preview-rendered"></div>
+      <details class="preview-source-wrap">
+        <summary>Show markdown source</summary>
+        <pre id="preview-source" class="preview-source"></pre>
+      </details>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
