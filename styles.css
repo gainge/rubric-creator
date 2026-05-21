@@ -185,8 +185,16 @@ body[data-mode="edit"] .rubric .rl-header {
 
 .rubric td.criteria-cell {
   min-width: 140px;
+  max-width: var(--max-cell-width, none);
+  overflow-wrap: break-word;
+  white-space: normal;
   cursor: pointer;
   transition: background 0.08s;
+}
+.rubric th.cat-header {
+  max-width: var(--max-cell-width, none);
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 body[data-mode="edit"] .rubric td.criteria-cell { cursor: text; }
 body[data-mode="use"] .rubric td.criteria-cell:hover { background: #f1f5f9; }

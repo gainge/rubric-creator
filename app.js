@@ -130,8 +130,18 @@ function render() {
   if (widthInput && document.activeElement !== widthInput) {
     widthInput.value = String(state.config.maxColWidth);
   }
+  applyCellWidthVar();
   renderTable();
   renderPreview();
+}
+
+// Drive a single CSS custom property from the configured char width.
+// `ch` units track the rendered "0" glyph, so the visual wrap matches what
+// the markdown emitter does textually — close enough for parity, and the
+// browser handles word breaking natively (so contenteditable still works).
+function applyCellWidthVar() {
+  const w = state.config.maxColWidth;
+  document.body.style.setProperty('--max-cell-width', w > 0 ? `${Math.floor(Math.max(w / 2, 1))}ch` : 'none');
 }
 
 function renderTable() {
@@ -507,6 +517,7 @@ function wireGlobalEvents() {
     const raw = parseInt(e.target.value, 10);
     state.config.maxColWidth = Number.isFinite(raw) && raw >= 0 ? raw : 0;
     saveStructureToStorage();
+    applyCellWidthVar();
     renderPreview();
   });
 
