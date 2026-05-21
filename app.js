@@ -522,22 +522,20 @@ function wireGlobalEvents() {
   });
 
   document.getElementById('copy-rubric').addEventListener('click', async e => {
-    try {
-      await navigator.clipboard.writeText(buildMarkdown());
-      flash(e.currentTarget, 'Copied!');
-    } catch {
-      alert('Clipboard access was blocked. Open the markdown source panel below and copy manually.');
-    }
+    // Capture the button now — `currentTarget` is nulled by the browser as
+    // soon as we `await`, since the synchronous event dispatch has ended.
+    const btn = e.currentTarget;
+    const ok = await copyToClipboard(buildMarkdown());
+    if (ok) flash(btn, 'Copied!');
+    else alert('Clipboard access was blocked. Open the markdown source panel below and copy manually.');
   });
 
   document.getElementById('copy-url').addEventListener('click', async e => {
+    const btn = e.currentTarget;
     const url = location.origin + location.pathname + '#' + encodeStructureToHash();
-    try {
-      await navigator.clipboard.writeText(url);
-      flash(e.currentTarget, 'Copied!');
-    } catch {
-      prompt('Copy this URL:', url);
-    }
+    const ok = await copyToClipboard(url);
+    if (ok) flash(btn, 'Copied!');
+    else prompt('Copy this URL:', url);
   });
 
   document.getElementById('reset-selections').addEventListener('click', () => {
@@ -562,10 +560,44 @@ function wireGlobalEvents() {
 }
 
 function flash(btn, msg) {
+  if (!btn) return;
   const original = btn.textContent;
   btn.textContent = msg;
   btn.disabled = true;
   setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1200);
+}
+
+// Writes `text` to the clipboard. Tries the async Clipboard API first, then
+// falls back to a hidden textarea + execCommand('copy') for contexts where
+// the async API is unavailable (file://, http on a non-localhost host, some
+// embedded browsers). Returns true on success.
+async function copyToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      console.warn('navigator.clipboard.writeText failed; trying execCommand fallback', err);
+    }
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.left = '0';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch (err) {
+    console.warn('execCommand copy fallback failed', err);
+    return false;
+  }
 }
 
 init();
