@@ -54,6 +54,27 @@ body {
 #mode-toggle { background: var(--accent); color: #fff; border-color: var(--accent); }
 #mode-toggle:hover { background: #1d4ed8; }
 
+.width-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 0 8px;
+  background: var(--panel);
+}
+.width-control input {
+  width: 56px;
+  border: none;
+  outline: none;
+  font: inherit;
+  color: var(--text);
+  padding: 6px 0;
+  background: transparent;
+}
+
 main {
   padding: 20px;
   display: grid;
@@ -122,11 +143,12 @@ body[data-mode="use"]  .hint[data-show-in="edit"] { display: none; }
 
 .rubric .rl-header {
   --rl-color: #94a3b8;
-  border-left: 4px solid var(--rl-color);
   white-space: nowrap;
   font-weight: 600;
   background: #fafafa;
 }
+.rubric tbody .rl-header { border-left: 4px solid var(--rl-color); }
+.rubric thead .rl-header { border-top:  4px solid var(--rl-color); }
 body[data-mode="edit"] .rubric .rl-header {
   display: table-cell;
 }
