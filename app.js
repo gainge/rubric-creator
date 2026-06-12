@@ -31,6 +31,7 @@ const STORAGE_KEY = 'rubric-creator:structure:v1';
 const DEFAULT_CONFIG = {
   orientation: 'risk-rows', // 'risk-rows' | 'category-rows'
   maxColWidth: 40,          // chars per markdown table cell; 0 disables wrapping
+  compact: false,           // collapse output to one selected item per category
 };
 
 const state = {
@@ -70,6 +71,7 @@ function applyStructure({ riskLevels, categories, criteria, config }) {
   state.config = {
     orientation: config?.orientation === 'category-rows' ? 'category-rows' : 'risk-rows',
     maxColWidth: Number.isFinite(config?.maxColWidth) ? config.maxColWidth : DEFAULT_CONFIG.maxColWidth,
+    compact: config?.compact === true,
   };
   state.selections = {};
   saveStructureToStorage();
@@ -124,8 +126,11 @@ function decodeStructureFromHash() {
 function render() {
   document.body.dataset.mode = state.mode;
   document.body.dataset.orientation = state.config.orientation;
+  document.body.dataset.compact = String(state.config.compact);
   document.getElementById('mode-toggle').textContent =
     state.mode === 'edit' ? 'Done editing' : 'Edit rubric';
+  document.getElementById('compact-toggle')
+    .setAttribute('aria-pressed', String(state.config.compact));
   const widthInput = document.getElementById('max-width');
   if (widthInput && document.activeElement !== widthInput) {
     widthInput.value = String(state.config.maxColWidth);
@@ -422,6 +427,7 @@ function wrapAndEscape(text, maxWidth) {
 }
 
 function buildMarkdown() {
+  if (state.config.compact) return buildCompactMarkdown();
   const catsAsRows = state.config.orientation === 'category-rows';
   const rowItems = catsAsRows ? state.categories : state.riskLevels;
   const colItems = catsAsRows ? state.riskLevels : state.categories;
@@ -452,15 +458,51 @@ function buildMarkdown() {
   return lines.join('\n');
 }
 
+// One selected item per category, laid out in a single row (or single column
+// when categories are the rows). Unselected categories read as "N/A".
+function buildCompactMarkdown() {
+  const w = state.config.maxColWidth;
+  const cellFor = cat => {
+    const rl = state.riskLevels.find(r => r.id === state.selections[cat.id]);
+    if (!rl) return 'N/A';
+    const risk = `**${escapeMd(`${rl.emoji} ${rl.label}`.trim())}**`;
+    const text = wrapAndEscape(state.criteria[`${rl.id}:${cat.id}`] || '', w);
+    return text ? `${risk} ${text}` : risk;
+  };
+
+  if (state.config.orientation === 'category-rows') {
+    const header = ['Category', 'Selection'];
+    const lines = [
+      '| ' + header.join(' | ') + ' |',
+      '|' + header.map(() => '---').join('|') + '|',
+    ];
+    state.categories.forEach(cat => {
+      lines.push(`| ${wrapAndEscape(cat.label, w) || ' '} | ${cellFor(cat)} |`);
+    });
+    return lines.join('\n');
+  }
+
+  const headerCells = state.categories.map(c => wrapAndEscape(c.label, w) || ' ');
+  const valueCells  = state.categories.map(cellFor);
+  return [
+    '| ' + headerCells.join(' | ') + ' |',
+    '|' + headerCells.map(() => '---').join('|') + '|',
+    '| ' + valueCells.join(' | ') + ' |',
+  ].join('\n');
+}
+
 function renderPreview() {
   const md = buildMarkdown();
+  // Compact risk-rows output has no row-label column, so its single value row
+  // should read as plain data rather than picking up row-header shading.
+  const rowHeaders = !(state.config.compact && state.config.orientation === 'risk-rows');
   document.getElementById('preview-source').textContent = md;
-  document.getElementById('preview-rendered').innerHTML = renderMdTable(md);
+  document.getElementById('preview-rendered').innerHTML = renderMdTable(md, rowHeaders);
 }
 
 // Minimal renderer for our own output shape: pipe table + `**bold**`.
 // Not a general-purpose markdown engine.
-function renderMdTable(md) {
+function renderMdTable(md, rowHeaders = true) {
   const lines = md.split('\n').filter(l => l.trim());
   if (lines.length < 2) return '';
   const parseRow = line => {
@@ -490,7 +532,7 @@ function renderMdTable(md) {
   for (let i = 1; i < rows.length; i++) {
     html += '<tr>';
     rows[i].forEach((c, j) => {
-      const tag = j === 0 ? 'th' : 'td';
+      const tag = j === 0 && rowHeaders ? 'th' : 'td';
       html += `<${tag}>${renderCell(c)}</${tag}>`;
     });
     html += '</tr>';
@@ -509,6 +551,12 @@ function wireGlobalEvents() {
   document.getElementById('swap-axes').addEventListener('click', () => {
     state.config.orientation =
       state.config.orientation === 'risk-rows' ? 'category-rows' : 'risk-rows';
+    saveStructureToStorage();
+    render();
+  });
+
+  document.getElementById('compact-toggle').addEventListener('click', () => {
+    state.config.compact = !state.config.compact;
     saveStructureToStorage();
     render();
   });

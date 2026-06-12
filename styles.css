@@ -51,6 +51,11 @@ body {
   color: var(--text);
 }
 .actions button:hover { background: #f1f5f9; }
+.actions button[aria-pressed="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--panel);
+}
 #mode-toggle { background: var(--accent); color: #fff; border-color: var(--accent); }
 #mode-toggle:hover { background: #1d4ed8; }
 
